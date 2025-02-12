@@ -1,7 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { auth, db } from './firebase.config';
+import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { Link } from 'react-router-dom';
 
 function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
+    const [user, setUser] = useState(null);
+    const [userName, setUserName] = useState('');
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                // Fetch user details from Firestore
+                try {
+                    const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+                    if (userDoc.exists()) {
+                        setUserName(userDoc.data().name);
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            } else {
+                setUser(null);
+                setUserName('');
+            }
+        });
+
+        // Cleanup subscription
+        return () => unsubscribe();
+    }, []);
 
     return (
         <nav className="bg-[#474E93] text-white">
@@ -14,36 +43,62 @@ function Navbar() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex space-x-4">
-                        <a
-                            href="#"
+                        <Link
+                            to="/"
                             className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
                         >
                             Home
-                        </a>
-                        <a
-                            href="#about"
+                        </Link>
+                        <Link
+                            to="/about"
                             className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
                         >
                             About
-                        </a>
-                        <a
-                            href="events"
+                        </Link>
+                        <Link
+                            to="/events"
                             className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
                         >
                             Events
-                        </a>
-                        <a
-                            href="tickets"
+                        </Link>
+                        <Link
+                            to="/tickets"
                             className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
                         >
                             Tickets
-                        </a>
-                        <a
-                            href="/contact"
-                            className="px-3 py-2 rounded-md text-sm font-medium bg-blue-00"
-                        >
-                            Sign Up
-                        </a>
+                        </Link>
+
+                        {user ? (
+
+
+                            <div className="flex items-center space-x-4">
+                                <Link
+                                    to="/profile"
+                                    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                                >
+                                    Profile
+                                </Link>
+                                <span className="text-sm font-medium bg-white text-black px-3 py-2 rounded-md">
+                                    Hey, {userName}
+                                </span>
+
+                            </div>
+                        ) : (
+                            <div className="flex space-x-4">
+                                <Link
+                                    to="/login"
+                                    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                                >
+                                    Login
+                                </Link>
+                                <Link
+                                    to="/signup"
+                                    className="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 hover:bg-blue-700"
+                                >
+                                    Sign Up
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -84,30 +139,59 @@ function Navbar() {
             {isOpen && (
                 <div className="md:hidden bg-blue-700">
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        <a
-                            href="#"
+                        <Link
+                            to="/"
                             className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
                         >
                             Home
-                        </a>
-                        <a
-                            href="#about"
+                        </Link>
+                        <Link
+                            to="/about"
                             className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
                         >
                             About
-                        </a>
-                        <a
-                            href="#events"
+                        </Link>
+                        <Link
+                            to="/events"
                             className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
                         >
                             Events
-                        </a>
-                        <a
-                            href="#contact"
+                        </Link>
+                        <Link
+                            to="/tickets"
                             className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
                         >
-                            Contact
-                        </a>
+                            Tickets
+                        </Link>
+
+                        {user ? (
+                            <>
+                                <span className="block px-3 py-2 text-base font-medium">
+                                    Hey, {userName}
+                                </span>
+                                <Link
+                                    to="/profile"
+                                    className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
+                                >
+                                    Profile
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
+                                >
+                                    Login
+                                </Link>
+                                <Link
+                                    to="/signup"
+                                    className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800"
+                                >
+                                    Sign Up
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
